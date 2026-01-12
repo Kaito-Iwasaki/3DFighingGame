@@ -11,6 +11,7 @@
 // 
 //*********************************************************************
 #include "Camera.h"
+#include "input.h"
 
 
 //*********************************************************************
@@ -57,6 +58,19 @@ void InitCamera(void)
 	g_camera.posV = D3DXVECTOR3(0, 50, -50);
 	g_camera.posR = D3DXVECTOR3(0, 0, 0);
 	g_camera.vecU = D3DXVECTOR3(0, 1, 0);
+	g_camera.rot = D3DXVECTOR3(0, 0, 0);
+
+	// プロジェクションマトリックスの初期化
+	D3DXMatrixIdentity(&g_camera.mtxProjection);
+
+	// プロジェクションマトリックスを作成（透視投影行列）
+	D3DXMatrixPerspectiveFovLH(
+		&g_camera.mtxProjection,
+		D3DXToRadian(45.0f),							// 視野角
+		(float)SCREEN_WIDTH / (float)SCREEN_HEIGHT,		// アスペクト比
+		10.0f,											// 最小Z値
+		1000.0f											// 最大Z値
+	);
 }
 
 //=====================================================================
@@ -72,7 +86,14 @@ void UninitCamera(void)
 //=====================================================================
 void UpdateCamera(void)
 {
-
+	if (GetKeyboardPress(DIK_A))
+	{
+		g_camera.posV.x -= 1;
+	}
+	if (GetKeyboardPress(DIK_D))
+	{
+		g_camera.posV.x += 1;
+	}
 }
 
 //=====================================================================
@@ -81,18 +102,6 @@ void UpdateCamera(void)
 void SetCamera(void)
 {
 	LPDIRECT3DDEVICE9 pDevice = GetDevice();
-
-	// プロジェクションマトリックスの初期化
-	D3DXMatrixIdentity(&g_camera.mtxProjection);
-
-	// プロジェクションマトリックスを作成（透視投影行列）
-	D3DXMatrixPerspectiveFovLH(
-		&g_camera.mtxProjection,						
-		D3DXToRadian(45.0f),							// 視野角
-		(float)SCREEN_WIDTH / (float)SCREEN_HEIGHT,		// アスペクト比
-		10.0f,											// 最小Z値
-		1000.0f											// 最大Z値
-	);
 
 	// プロジェクションマトリックスの設定
 	pDevice->SetTransform(D3DTS_PROJECTION, &g_camera.mtxProjection);
@@ -110,4 +119,9 @@ void SetCamera(void)
 
 	// ビューマトリックスの設定
 	pDevice->SetTransform(D3DTS_VIEW, &g_camera.mtxView);
+}
+
+CAMERA* GetCamera(void)
+{
+	return &g_camera;
 }

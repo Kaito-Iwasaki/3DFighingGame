@@ -12,6 +12,8 @@
 //*********************************************************************
 #include "Polygon.h"
 #include "util.h"
+#include "input.h"
+#include "camera.h"
 
 
 //*********************************************************************
@@ -48,6 +50,7 @@
 // 
 //*********************************************************************
 LPDIRECT3DVERTEXBUFFER9 g_pVtxBuffPolygon = NULL;
+D3DXVECTOR3 posPolygon;
 
 // ワールドマトリックス
 // このオブジェクトの最終的な位置はここに入る
@@ -60,6 +63,7 @@ void InitPolygon(void)
 {
 	LPDIRECT3DDEVICE9 pDevice = GetDevice();
 
+	posPolygon = D3DXVECTOR3_ZERO;
 	// 頂点バッファの生成
 	pDevice->CreateVertexBuffer(
 		sizeof(VERTEX_3D) * 4,
@@ -84,7 +88,44 @@ void UninitPolygon(void)
 //=====================================================================
 void UpdatePolygon(void)
 {
+	DIMOUSESTATE mouse = GetMouse();
+	LPDIRECT3DDEVICE9 pDevice = GetDevice();
+	D3DXMATRIX mtxViewInv;
+	D3DXVECTOR2 posMouse = GetMousePos();
+	D3DVIEWPORT9 viewport;
 
+	if (GetMousePress(MOUSE_LEFT))
+	{
+		posPolygon.x += mouse.lX * Magnitude(GetCamera()->posV, posPolygon) * 0.003f;
+	}
+
+	pDevice->GetTransform(D3DTS_VIEW, &mtxViewInv);
+	pDevice->GetViewport(&viewport);
+
+	// スクリーン座標→ワールド
+	// = スクリーン座標・逆ビューマトリックス・逆プロジェクションマトリックス・逆ピューポイントマトリックス
+	// ビューポイントマトリックスは自分で作る必要アリ
+	// [ SCREEN_W / 2, 0, 0, 0 ]
+	// [ 0, SCREEN_H / 2, 0, 0 ]
+	// [ 0, 0, 1, 0 ]
+	// [ SCREEN_W / 2, SCREEN_H / 2, 0, 1]
+
+	//if (GetKeyboardPress(DIK_LEFT))
+	//{
+	//	posPolygon.x -= 1;
+	//}
+	//if (GetKeyboardPress(DIK_RIGHT))
+	//{
+	//	posPolygon.x += 1;
+	//}
+	//if (GetKeyboardPress(DIK_UP))
+	//{
+	//	posPolygon.z += 1;
+	//}
+	//if (GetKeyboardPress(DIK_DOWN))
+	//{
+	//	posPolygon.z -= 1;
+	//}
 }
 
 //=====================================================================
@@ -134,7 +175,7 @@ void DrawPolygon(void)
 	D3DXMatrixMultiply(&g_mtxWorldPolygon, &g_mtxWorldPolygon, &mtxRot);
 
 	// 位置を反映
-	D3DXMatrixTranslation(&mtxTrans, 0, 0, 0);
+	D3DXMatrixTranslation(&mtxTrans, posPolygon.x, posPolygon.y, posPolygon.z);
 	D3DXMatrixMultiply(&g_mtxWorldPolygon, &g_mtxWorldPolygon, &mtxTrans);
 
 	// ワールドマトリックスの設定

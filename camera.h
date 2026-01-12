@@ -38,6 +38,7 @@ typedef struct CAMERA
 	D3DXVECTOR3 posV;
 	D3DXVECTOR3 posR;
 	D3DXVECTOR3 vecU;
+	D3DXVECTOR3 rot;
 	D3DXMATRIX mtxProjection;	// プロジェクションマトリックス（投影行列）
 	D3DXMATRIX mtxView;			// ビューマトリックス
 };
@@ -51,5 +52,6 @@ void InitCamera(void);
 void UninitCamera(void);
 void UpdateCamera(void);
 void SetCamera(void);
+CAMERA* GetCamera(void);
 
 #endif

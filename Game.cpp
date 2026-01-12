@@ -73,6 +73,7 @@ void UninitGame(void)
 //=====================================================================
 void UpdateGame(void)
 {
+	UpdateCamera();
 	UpdatePolygon();
 }
 
