@@ -90,25 +90,69 @@ void UpdatePolygon(void)
 {
 	DIMOUSESTATE mouse = GetMouse();
 	LPDIRECT3DDEVICE9 pDevice = GetDevice();
-	D3DXMATRIX mtxViewInv;
 	D3DXVECTOR2 posMouse = GetMousePos();
-	D3DVIEWPORT9 viewport;
-
-	if (GetMousePress(MOUSE_LEFT))
-	{
-		posPolygon.x += mouse.lX * Magnitude(GetCamera()->posV, posPolygon) * 0.003f;
-	}
-
-	pDevice->GetTransform(D3DTS_VIEW, &mtxViewInv);
-	pDevice->GetViewport(&viewport);
+	D3DXMATRIX mtxView, mtxProj, mtxViewport;
+	D3DXMATRIX mtxViewInv, mtxProjInv, mtxViewportInv;
+	D3DXVECTOR3 posNear, posFar, posWorld;
+	D3DXVECTOR3 vecRay;
+	D3DXVECTOR3 vecUp = D3DXVECTOR3(0, 1, 0);
 
 	// スクリーン座標→ワールド
 	// = スクリーン座標・逆ビューマトリックス・逆プロジェクションマトリックス・逆ピューポイントマトリックス
 	// ビューポイントマトリックスは自分で作る必要アリ
 	// [ SCREEN_W / 2, 0, 0, 0 ]
-	// [ 0, SCREEN_H / 2, 0, 0 ]
+	// [ 0, -SCREEN_H / 2, 0, 0 ]
 	// [ 0, 0, 1, 0 ]
 	// [ SCREEN_W / 2, SCREEN_H / 2, 0, 1]
+
+	// ビュー行列の取得
+	pDevice->GetTransform(D3DTS_VIEW, &mtxView);
+
+	// プロジェクション行列の取得
+	pDevice->GetTransform(D3DTS_PROJECTION, &mtxProj);
+
+	// ビューポート行列の初期化
+	D3DXMatrixIdentity(&mtxViewport);
+	mtxViewport._11 = SCREEN_WIDTH / 2;
+	mtxViewport._22 = -SCREEN_HEIGHT / 2;
+	mtxViewport._41 = SCREEN_WIDTH / 2;
+	mtxViewport._42 = SCREEN_HEIGHT / 2;
+
+	// 各行列の逆行列を取得
+	D3DXMatrixInverse(&mtxViewInv, NULL, &mtxView);
+	D3DXMatrixInverse(&mtxProjInv, NULL, &mtxProj);
+	D3DXMatrixInverse(&mtxViewportInv, NULL, &mtxViewport);
+
+	D3DXMATRIX mtxInv = mtxViewportInv * mtxProjInv * mtxViewInv;
+	D3DXVECTOR3 vecNear = D3DXVECTOR3(posMouse.x, posMouse.y, 0.0f);
+	D3DXVECTOR3 vecFar = D3DXVECTOR3(posMouse.x, posMouse.y, 1.0f);
+	D3DXVec3TransformCoord(&posNear, &vecNear, &mtxInv);
+	D3DXVec3TransformCoord(&posFar, &vecFar, &mtxInv);
+	vecRay = Normalize(posFar - posNear);
+	D3DXVECTOR3 posNearInv = -posNear;
+
+	if (vecRay.y < 0)
+	{
+		float Lray = D3DXVec3Dot(&vecRay, &vecUp);
+		float LP0 = D3DXVec3Dot(&posNearInv, &vecUp);
+		posWorld = posNear + (LP0 / Lray) * vecRay;
+	}
+	else
+	{
+		posWorld = posFar;
+	}
+
+	if (GetKeyboardPress(DIK_1))
+	{
+		posWorld.x = 0;
+	}
+	else if (GetKeyboardPress(DIK_2))
+	{
+		posWorld.z = 0;
+	}
+
+	posPolygon.x = (float)(((int)posWorld.x / 10) * 20);
+	posPolygon.z = (float)(((int)posWorld.z / 10) * 20);
 
 	//if (GetKeyboardPress(DIK_LEFT))
 	//{
