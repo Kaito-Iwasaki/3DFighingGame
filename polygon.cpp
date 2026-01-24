@@ -50,7 +50,7 @@
 // 
 //*********************************************************************
 LPDIRECT3DVERTEXBUFFER9 g_pVtxBuffPolygon = NULL;
-D3DXVECTOR3 posPolygon;
+TRANSFORM transformPolygon;
 
 // ワールドマトリックス
 // このオブジェクトの最終的な位置はここに入る
@@ -63,7 +63,10 @@ void InitPolygon(void)
 {
 	LPDIRECT3DDEVICE9 pDevice = GetDevice();
 
-	posPolygon = D3DXVECTOR3_ZERO;
+	transformPolygon.pos = D3DXVECTOR3_ZERO;
+	transformPolygon.size = D3DXVECTOR3(100, 0, 100);
+	transformPolygon.rot = D3DXVECTOR3_ZERO;
+
 	// 頂点バッファの生成
 	pDevice->CreateVertexBuffer(
 		sizeof(VERTEX_3D) * 4,
@@ -94,11 +97,18 @@ void UpdatePolygon(void)
 	D3DXMATRIX mtxView, mtxProj, mtxViewport;
 	D3DXMATRIX mtxViewInv, mtxProjInv, mtxViewportInv;
 	D3DXVECTOR3 posNear, posFar, posWorld;
-	D3DXVECTOR3 vecRay;
-	D3DXVECTOR3 vecUp = D3DXVECTOR3(0, 1, 0);
+	D3DXVECTOR3 vecRay;	// 最近点から最遠点へのベクトル
+	D3DXVECTOR3 vecNor = D3DXVECTOR3(0, 1, 0);	// 平面の法線
 
-	// スクリーン座標→ワールド
-	// = スクリーン座標・逆ビューマトリックス・逆プロジェクションマトリックス・逆ピューポイントマトリックス
+	// スクリーン→ワールド変換の流れ
+	// まずワールド座標からスクリーン座標への変換の順序を逆にする
+	// スクリーン座標＝ワールド座標×ビュー行列×プロジェクション行列×ビューポイント行列
+	// ワールド座標は逆行列を使うと求められる
+	// ワールド座標＝スクリーン座標×逆ビューポイント行列×逆プロジェクション行列×逆ビュー行列
+	// ここで気を付けるのは行列を掛け合わせる順番で、ワールド→スクリーンはそうだし
+	// スクリーン→ワールドもビューポイント行列から逆に掛け合わせていく必要アリ（行列は順番変えると結果アホほど変わる）
+	// また、スクリーン座標からはビュー空間におけるX成分とY成分しか求まらず、Z成分は適宜設定しなければならない。
+
 	// ビューポイントマトリックスは自分で作る必要アリ
 	// [ SCREEN_W / 2, 0, 0, 0 ]
 	// [ 0, -SCREEN_H / 2, 0, 0 ]
@@ -133,9 +143,17 @@ void UpdatePolygon(void)
 
 	if (vecRay.y < 0)
 	{
-		float Lray = D3DXVec3Dot(&vecRay, &vecUp);
-		float LP0 = D3DXVec3Dot(&posNearInv, &vecUp);
-		posWorld = posNear + (LP0 / Lray) * vecRay;
+		// 光線ベクトルの射影長を求める
+		// （ここでいう射影長は光線ベクトルの射影ベクトルの長さ）
+		// （射影ベクトルはあるベクトルの影のようなベクトル。詳しくは画像でググれ）
+		float fLengthProjRay = D3DXVec3Dot(&vecRay, &vecNor);
+
+		// 最近点からから平面までの長さを求める
+		// (ここも最近点から平面の一点P0までのベクトルNearToP0の射影長である）
+		float fLengthProjP0 = D3DXVec3Dot(&posNearInv, &vecNor);
+
+
+		posWorld = posNear + (fLengthProjP0 / fLengthProjRay) * vecRay;
 	}
 	else
 	{
@@ -151,25 +169,10 @@ void UpdatePolygon(void)
 		posWorld.z = 0;
 	}
 
-	posPolygon.x = (float)(((int)posWorld.x / 10) * 20);
-	posPolygon.z = (float)(((int)posWorld.z / 10) * 20);
-
-	//if (GetKeyboardPress(DIK_LEFT))
-	//{
-	//	posPolygon.x -= 1;
-	//}
-	//if (GetKeyboardPress(DIK_RIGHT))
-	//{
-	//	posPolygon.x += 1;
-	//}
-	//if (GetKeyboardPress(DIK_UP))
-	//{
-	//	posPolygon.z += 1;
-	//}
-	//if (GetKeyboardPress(DIK_DOWN))
-	//{
-	//	posPolygon.z -= 1;
-	//}
+	transformPolygon.pos.x = (float)(((int)posWorld.x / (int)(transformPolygon.size.x/2)) * (int)(transformPolygon.size.x/2));
+	transformPolygon.pos.z = (float)(((int)posWorld.z / (int)(transformPolygon.size.z/2)) * (int)(transformPolygon.size.z/2));
+	//transformPolygon.pos.x = posWorld.x;
+	//transformPolygon.pos.z = posWorld.z;
 }
 
 //=====================================================================
@@ -186,10 +189,10 @@ void DrawPolygon(void)
 	g_pVtxBuffPolygon->Lock(0, 0, (void**)&pVtx, 0);
 
 	// 頂点情報を設定
-	pVtx[0].pos = D3DXVECTOR3(-10.0f, 0.0f, +10.0f);
-	pVtx[1].pos = D3DXVECTOR3(+10.0f, 0.0f, +10.0f);
-	pVtx[2].pos = D3DXVECTOR3(-10.0f, 0.0f, -10.0f);
-	pVtx[3].pos = D3DXVECTOR3(+10.0f, 0.0f, -10.0f);
+	pVtx[0].pos = D3DXVECTOR3(-transformPolygon.size.x / 2.0f, 0.0f, +transformPolygon.size.z / 2.0f);
+	pVtx[1].pos = D3DXVECTOR3(+transformPolygon.size.x / 2.0f, 0.0f, +transformPolygon.size.z / 2.0f);
+	pVtx[2].pos = D3DXVECTOR3(-transformPolygon.size.x / 2.0f, 0.0f, -transformPolygon.size.z / 2.0f);
+	pVtx[3].pos = D3DXVECTOR3(+transformPolygon.size.x / 2.0f, 0.0f, -transformPolygon.size.z / 2.0f);
 
 	pVtx[0].nor = D3DXVECTOR3(0.0f, -1.0f, 0.0f);
 	pVtx[1].nor = D3DXVECTOR3(0.0f, -1.0f, 0.0f);
@@ -215,16 +218,16 @@ void DrawPolygon(void)
 	D3DXMatrixIdentity(&g_mtxWorldPolygon);
 
 	// 向きを反映
-	D3DXMatrixRotationYawPitchRoll(&mtxRot, 0, 0, 0);
+	D3DXMatrixRotationYawPitchRoll(&mtxRot, transformPolygon.rot.x, transformPolygon.rot.y, transformPolygon.rot.z);
 	D3DXMatrixMultiply(&g_mtxWorldPolygon, &g_mtxWorldPolygon, &mtxRot);
 
 	// 位置を反映
-	D3DXMatrixTranslation(&mtxTrans, posPolygon.x, posPolygon.y, posPolygon.z);
+	D3DXMatrixTranslation(&mtxTrans, transformPolygon.pos.x, transformPolygon.pos.y, transformPolygon.pos.z);
 	D3DXMatrixMultiply(&g_mtxWorldPolygon, &g_mtxWorldPolygon, &mtxTrans);
 
 	// ワールドマトリックスの設定
 	pDevice->SetTransform(D3DTS_WORLD, &g_mtxWorldPolygon);
 
 	// ポリゴンの描画
-	pDevice->DrawPrimitive(D3DPT_TRIANGLESTRIP, 0, 4);
+	pDevice->DrawPrimitive(D3DPT_TRIANGLESTRIP, 0, 2);
 }

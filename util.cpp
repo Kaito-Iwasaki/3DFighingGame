@@ -112,8 +112,8 @@ D3DXVECTOR3 CrossProduct(D3DXVECTOR3 vectorA, D3DXVECTOR3 vectorB)
 {
 	return D3DXVECTOR3(
 		vectorA.y * vectorB.z - vectorA.z * vectorB.y,
-		vectorA.x * vectorB.z - vectorA.z * vectorB.x,
-		vectorA.y * vectorB.x - vectorA.x * vectorB.y
+		vectorA.z * vectorB.x - vectorA.x * vectorB.z,
+		vectorA.x * vectorB.y - vectorA.y * vectorB.x
 	);
 }
 

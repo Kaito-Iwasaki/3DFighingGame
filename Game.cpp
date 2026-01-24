@@ -13,6 +13,7 @@
 #include "Game.h"
 #include "polygon.h"
 #include "camera.h"
+#include "Grid.h"
 
 
 //*********************************************************************
@@ -55,8 +56,11 @@
 //=====================================================================
 void InitGame(void)
 {
+	GetDevice()->SetRenderState(D3DRS_LIGHTING, FALSE);
+
 	InitCamera();
 	InitPolygon();
+	InitGrid();
 }
 
 //=====================================================================
@@ -66,6 +70,7 @@ void UninitGame(void)
 {
 	UninitCamera();
 	UninitPolygon();
+	UninitGrid();
 }
 
 //=====================================================================
@@ -75,6 +80,7 @@ void UpdateGame(void)
 {
 	UpdateCamera();
 	UpdatePolygon();
+	UpdateGrid();
 }
 
 //=====================================================================
@@ -83,9 +89,9 @@ void UpdateGame(void)
 void DrawGame(void)
 {
 
-	GetDevice()->SetRenderState(D3DRS_LIGHTING, FALSE);
 
-	SetCamera();
+	SetCamera(0);
 
 	DrawPolygon();
+	DrawGrid();
 }
