@@ -27,9 +27,9 @@
 #define CAMERA_ROT_X_MIN			(-(D3DX_PI/2) + 0.01f)						// カメラX軸回転最小値
 #define CAMERA_ROT_X_MAX			((D3DX_PI/2) - 0.01f)						// カメラX軸回転最大値
 #define CAMERA_FREE_MOVESPEED		(5.0f)
-#define CAMERA_FREE_DRAGSPEED		(3.0f)
-#define CAMERA_FREE_ROTATE_SPEED_V	(0.0075f)
-#define CAMERA_FREE_ROTATE_SPEED_R	(0.01f)
+#define CAMERA_FREE_DRAGSPEED		(0.5f)
+#define CAMERA_FREE_ROTATE_SPEED_V	(0.002f)
+#define CAMERA_FREE_ROTATE_SPEED_R	(0.003f)
 
 //*********************************************************************
 // 
@@ -103,27 +103,29 @@ void UpdateCamera(void)
 
 	/*カメラ移動処理*/
 	if (GetMousePress(MOUSE_LEFT) && GetMousePress(MOUSE_RIGHT))
-	{// 平行移動（前後）
+	{
+		// 平行移動（前後）
 		D3DXVECTOR3 move = vecForwad * -mouse.lY * CAMERA_FREE_DRAGSPEED;
 		MoveCamera(0, move);
 	}
 	else if (GetMousePress(MOUSE_MIDDLE))
-	{// 平行移動（上下左右）
+	{
+		// 平行移動（上下左右）
 		D3DXVECTOR3 move = (vecUp * mouse.lY + vecRight * -mouse.lX) * CAMERA_FREE_DRAGSPEED;
 		MoveCamera(0, move);
 	}
-	else if (GetMousePress(MOUSE_LEFT))
-	{// 視点操作
+	else if (GetMousePress(MOUSE_RIGHT))
+	{// 注視点操作
 		pCamera->rot.x = GetFixedRotation(pCamera->rot.x - mouse.lY * CAMERA_FREE_ROTATE_SPEED_R);
 		pCamera->rot.y = GetFixedRotation(pCamera->rot.y + mouse.lX * CAMERA_FREE_ROTATE_SPEED_R);
 		SetCameraPosVFromAngle(0);
 	}
-	else if (GetMousePress(MOUSE_RIGHT))
-	{// 注視点操作
-		pCamera->rot.x = GetFixedRotation(pCamera->rot.x - mouse.lY * CAMERA_FREE_ROTATE_SPEED_V);
-		pCamera->rot.y = GetFixedRotation(pCamera->rot.y + mouse.lX * CAMERA_FREE_ROTATE_SPEED_V);
-		SetCameraPosRFromAngle(0);
-	}
+	//else if (GetMousePress(MOUSE_LEFT))
+	//{// 視点操作
+	//	pCamera->rot.x = GetFixedRotation(pCamera->rot.x - mouse.lY * CAMERA_FREE_ROTATE_SPEED_V);
+	//	pCamera->rot.y = GetFixedRotation(pCamera->rot.y + mouse.lX * CAMERA_FREE_ROTATE_SPEED_V);
+	//	SetCameraPosRFromAngle(0);
+	//}
 
 	if (mouse.lZ != 0)
 	{// カメラ距離の設定
@@ -132,17 +134,9 @@ void UpdateCamera(void)
 		SetCameraPosVFromAngle(0);
 	}
 
-	if (GetKeyboardPress(DIK_W))
+	if (GetKeyboardTrigger(DIK_BACKSPACE))
 	{
-		MoveCamera(0, vecForwad * 5);
-	}
-	if (GetKeyboardPress(DIK_D))
-	{
-		MoveCamera(0, vecRight * 5);
-	}
-	if (GetKeyboardPress(DIK_E))
-	{
-		MoveCamera(0, vecUp * 5);
+		InitCamera();
 	}
 
 	// ビューマトリックスの初期化

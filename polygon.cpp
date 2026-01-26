@@ -96,7 +96,7 @@ void UpdatePolygon(void)
 	D3DXVECTOR2 posMouse = GetMousePos();
 	D3DXMATRIX mtxView, mtxProj, mtxViewport;
 	D3DXMATRIX mtxViewInv, mtxProjInv, mtxViewportInv;
-	D3DXVECTOR3 posNear, posFar, posWorld;
+	D3DXVECTOR3 posWorld;
 	D3DXVECTOR3 vecRay;	// 最近点から最遠点へのベクトル
 	D3DXVECTOR3 vecNor = D3DXVECTOR3(0, 1, 0);	// 平面の法線
 
@@ -134,12 +134,13 @@ void UpdatePolygon(void)
 	D3DXMatrixInverse(&mtxViewportInv, NULL, &mtxViewport);
 
 	D3DXMATRIX mtxInv = mtxViewportInv * mtxProjInv * mtxViewInv;
-	D3DXVECTOR3 vecNear = D3DXVECTOR3(posMouse.x, posMouse.y, 0.0f);
-	D3DXVECTOR3 vecFar = D3DXVECTOR3(posMouse.x, posMouse.y, 1.0f);
-	D3DXVec3TransformCoord(&posNear, &vecNear, &mtxInv);
-	D3DXVec3TransformCoord(&posFar, &vecFar, &mtxInv);
+	D3DXVECTOR3 posNear = D3DXVECTOR3(posMouse.x, posMouse.y, 0.0f);
+	D3DXVECTOR3 posFar = D3DXVECTOR3(posMouse.x, posMouse.y, 1.0f);
+	D3DXVec3TransformCoord(&posNear, &posNear, &mtxInv);
+	D3DXVec3TransformCoord(&posFar, &posFar, &mtxInv);
+
+	// やってることとしてはベクトルRayをどれだけ伸ばすか、ということ。
 	vecRay = Normalize(posFar - posNear);
-	D3DXVECTOR3 posNearInv = -posNear;
 
 	if (vecRay.y < 0)
 	{
@@ -149,11 +150,14 @@ void UpdatePolygon(void)
 		float fLengthProjRay = D3DXVec3Dot(&vecRay, &vecNor);
 
 		// 最近点からから平面までの長さを求める
-		// (ここも最近点から平面の一点P0までのベクトルNearToP0の射影長である）
-		float fLengthProjP0 = D3DXVec3Dot(&posNearInv, &vecNor);
+		// （ここも最近点から平面の一点P0までのベクトルNearToP0の射影長である）
+		// （ちなみにここでposNearを使う理由は、P0=原点とした時、posNearは原点からカメラまでのベクトルとなるから）
+		float fLengthProjP0 = D3DXVec3Dot(&posNear, &vecNor);
 
-
-		posWorld = posNear + (fLengthProjP0 / fLengthProjRay) * vecRay;
+		// 内積さんまじパネぇっすわ。
+		// 使いどころが思い浮かぶようで全く思い浮かばない
+		// いや便利なんだろうけど。cos取れるの便利なんだろけど。
+		posWorld = posNear - (fLengthProjP0 / fLengthProjRay) * vecRay;
 	}
 	else
 	{
@@ -169,10 +173,11 @@ void UpdatePolygon(void)
 		posWorld.z = 0;
 	}
 
-	transformPolygon.pos.x = (float)(((int)posWorld.x / (int)(transformPolygon.size.x/2)) * (int)(transformPolygon.size.x/2));
-	transformPolygon.pos.z = (float)(((int)posWorld.z / (int)(transformPolygon.size.z/2)) * (int)(transformPolygon.size.z/2));
-	//transformPolygon.pos.x = posWorld.x;
-	//transformPolygon.pos.z = posWorld.z;
+	//transformPolygon.pos.x = (float)(((int)posWorld.x / (int)(transformPolygon.size.x/2)) * (int)(transformPolygon.size.x/2));
+	//transformPolygon.pos.z = (float)(((int)posWorld.z / (int)(transformPolygon.size.z/2)) * (int)(transformPolygon.size.z/2));
+	transformPolygon.pos.x = posWorld.x;
+	//transformPolygon.pos.y = posWorld.y;
+	transformPolygon.pos.z = posWorld.z;
 }
 
 //=====================================================================

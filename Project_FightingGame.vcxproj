@@ -149,11 +149,14 @@
     </ClCompile>
     <ClCompile Include="input.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="model.cpp" />
+    <ClCompile Include="model_loader.cpp" />
     <ClCompile Include="polygon.cpp">
       <SubType>
       </SubType>
     </ClCompile>
     <ClCompile Include="scene.cpp" />
+    <ClCompile Include="script.cpp" />
     <ClCompile Include="sound.cpp" />
     <ClCompile Include="util.cpp" />
   </ItemGroup>
@@ -174,11 +177,14 @@
     </ClInclude>
     <ClInclude Include="input.h" />
     <ClInclude Include="main.h" />
+    <ClInclude Include="model.h" />
+    <ClInclude Include="model_loader.h" />
     <ClInclude Include="polygon.h">
       <SubType>
       </SubType>
     </ClInclude>
     <ClInclude Include="scene.h" />
+    <ClInclude Include="script.h" />
     <ClInclude Include="sound.h" />
     <ClInclude Include="util.h" />
   </ItemGroup>
