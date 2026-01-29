@@ -102,7 +102,9 @@ void UpdateGame(void)
 
 	// 流れとしては
 	// 1.スクリーン座標からワールド座標の最近点と最遠点を取り始点と方向を取る。
-	// 2.
+	// 2.[最近点から平面の一点までのベクトル]と[法線の内積]、[光線ベクトル]と[法線ベクトル]の内積を取り、結果の割合を求める。
+	// 3.出た割合の分、光線ベクトルに乗算する。
+
 
 	pDevice->GetTransform(D3DTS_VIEW, &mtxView);
 	pDevice->GetTransform(D3DTS_PROJECTION, &mtxProj);
